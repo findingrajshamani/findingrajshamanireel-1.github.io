@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Finding Raj Shamani</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,500;1,300&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+
+<style>
+  /* ==================================================================
+     FINDING RAJ SHAMANI — cinematic reel, elevation pass
+
+     BEAT MAP
+       0  HOOK — black screen, caret only, camera pulls back while
+          the first message types. The interface is discovered.
+       1  attempt 1 — sent, fails. Stays on screen.
+       2  attempt 2 — sent, fails. Stays on screen.
+       3  attempt 3 — typed, reconsidered, deleted. Never sent.
+       4  the realization, held
+       5  the different message — sent, delivered
+       6  cursor enters, hovers, clicks — one continuous shot begins
+       7  SIGNATURE TRANSITION — the URL text becomes the title as
+          the camera pushes through it. No cuts.
+     ================================================================== */
+
+  :root{
+    --bg:             #070707;
+    --text-primary:   #FFFFFF;
+    --text-secondary: rgba(255,255,255,0.65);
+    --text-subtle:    rgba(255,255,255,0.35);
+    --hairline:       rgba(255,255,255,0.08);
+    --border-soft:    rgba(255,255,255,0.09);
+    --border-crisp:   rgba(255,255,255,0.14);
+    --error:          #B5675E;
+    --caret-red:      #FF3B30;
+    --success:        #7CA98A;
+    --ease-smooth:    cubic-bezier(.16,1,.3,1);
+  }
+
+  *{ box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; user-select:none; }
+  html,body{ height:100%; width:100%; background:var(--bg); overflow:hidden; }
+  body{ font-family:'Inter',sans-serif; }
+
+  .stage{ position:fixed; inset:0; background:var(--bg); display:flex; align-items:center; justify-content:center; }
+
+  .frame{
+    position:relative;
+    width:100vw; height:100vh;
+    max-width:56.25vh; max-height:177.78vw;
+    aspect-ratio:9/16;
+    background:radial-gradient(ellipse 130% 75% at 50% 12%, #0c0c0e 0%, #070707 58%);
+    overflow:hidden;
+    container-type:inline-size;
+    container-name:frame;
+  }
+
+  .vignette{
+    position:absolute; inset:0; z-index:9; pointer-events:none;
+    background:radial-gradient(ellipse at 50% 40%, rgba(0,0,0,0) 46%, rgba(0,0,0,0.44) 100%);
+  }
+  .grain{
+    position:absolute; inset:-20%; z-index:10; pointer-events:none;
+    opacity:0.028; mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* ================= APP WORLD (header + cards + composer) ================= */
+  /* Fallback zoom state — approximates the caret's position so there is never
+     a frame, even before JS runs, where the un-zoomed interface is visible. */
+  #appWorld{
+    position:absolute; inset:0; z-index:2; display:flex; flex-direction:column;
+    transform:scale(9); transform-origin:50% 60%;
+  }
+
+  .header{ padding:10.5cqw 6cqw 2cqw; flex-shrink:0; }
+  .headerName{
+    font-size:5.8cqw; font-weight:600; letter-spacing:-.012em; color:var(--text-primary);
+  }
+  .headerSub{
+    margin-top:1.5cqw;
+    font-size:3cqw; font-weight:400; letter-spacing:.015em; color:var(--text-secondary);
+  }
+  .activityStatus{ margin-top:4.8cqw; display:flex; flex-direction:column; gap:1.1cqw; }
+  .statusLabel2{ font-size:2.05cqw; letter-spacing:.14em; text-transform:uppercase; color:var(--text-subtle); }
+  .statusValueRow{ display:flex; align-items:center; gap:1.4cqw; }
+  .liveDot{ width:1.3cqw; height:1.3cqw; border-radius:50%; background:var(--success); animation:livePulse 1.8s ease-in-out infinite; }
+  @keyframes livePulse{ 0%,100%{ opacity:.35; transform:scale(.82); } 50%{ opacity:.85; transform:scale(1); } }
+  .statusValue{ font-size:2.75cqw; letter-spacing:.02em; color:var(--text-secondary); font-weight:500; }
+
+  .messagesWrap{ position:relative; flex:1; min-height:0; display:flex; flex-direction:column; }
+  .messageAreaScrim{
+    position:absolute; inset:0; z-index:0; pointer-events:none;
+    background:linear-gradient(180deg, rgba(255,255,255,0.022), rgba(255,255,255,0) 45%);
+  }
+  .messages{
+    position:relative; z-index:1;
+    flex:1; min-height:0;
+    display:flex; flex-direction:column; justify-content:flex-end;
+    gap:3.8cqw;
+    padding:2cqw 6cqw 3cqw;
+    overflow:hidden;
+  }
+
+  .card{
+    width:100%;
+    background:
+      radial-gradient(120% 140% at 14% 0%, rgba(255,255,255,0.05), rgba(255,255,255,0) 55%),
+      linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.018));
+    border:1px solid var(--border-soft);
+    border-radius:3.6cqw;
+    padding:4.5cqw 5cqw;
+    backdrop-filter:blur(22px) saturate(150%);
+    -webkit-backdrop-filter:blur(22px) saturate(150%);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,0.07),
+      inset 0 0 0 1px rgba(255,255,255,0.015),
+      0 2px 10px rgba(0,0,0,0.26),
+      0 18px 46px rgba(0,0,0,0.36);
+    transition:border-color .45s ease, box-shadow .45s ease;
+  }
+  .card.hoverGlow{
+    border-color:rgba(255,255,255,0.24);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,0.1),
+      inset 0 0 0 1px rgba(255,255,255,0.02),
+      0 2px 10px rgba(0,0,0,0.28),
+      0 18px 46px rgba(0,0,0,0.38),
+      0 0 46px rgba(255,255,255,0.055);
+  }
+  .cardText{
+    font-size:3.65cqw; line-height:1.6; letter-spacing:.003em;
+    color:var(--text-primary); font-weight:400; display:inline-block;
+  }
+  .cardText.cardLink{
+    text-decoration:underline;
+    text-decoration-color:rgba(255,255,255,0.28);
+    text-underline-offset:0.5cqw;
+  }
+  .cardStatus{ display:flex; align-items:center; gap:1.7cqw; margin-top:3cqw; }
+  .statusDot{ width:1.6cqw; height:1.6cqw; border-radius:50%; flex-shrink:0; background:rgba(255,255,255,0.45); }
+  .statusDot.sending{ animation:dotPulse 1.15s ease-in-out infinite; }
+  .statusDot.failed{ background:var(--error); animation:none; }
+  .statusDot.success{ background:var(--success); animation:none; }
+  @keyframes dotPulse{ 0%,100%{ opacity:.32; } 50%{ opacity:.9; } }
+  .statusLabel{ font-size:2.4cqw; letter-spacing:.03em; color:var(--text-subtle); }
+
+  .composerWrap{ padding:0 5cqw 15cqw; flex-shrink:0; }
+  .composer{
+    display:flex; align-items:center; gap:3cqw;
+    padding:4.5cqw 5cqw;
+    background:
+      radial-gradient(130% 160% at 18% 0%, rgba(255,255,255,0.05), rgba(255,255,255,0) 60%),
+      linear-gradient(160deg, #131316, #0d0d0f);
+    border:1px solid var(--border-crisp);
+    border-radius:5.2cqw;
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,0.085),
+      inset 0 0 0 1px rgba(255,255,255,0.02),
+      0 4px 14px rgba(0,0,0,0.3),
+      0 24px 56px rgba(0,0,0,0.42);
+  }
+  .inputRow{ flex:1; min-height:5cqw; display:flex; align-items:center; font-size:3.65cqw; color:var(--text-primary); letter-spacing:.003em; }
+  .inputText{ display:inline; border-radius:2px; transition:background .22s ease; }
+  .inputText.selected{ background:rgba(255,255,255,0.15); }
+  .caret{ width:2px; height:4cqw; background:var(--caret-red); margin-left:.4cqw; flex-shrink:0; animation:blink 1s steps(1,end) infinite; }
+  @keyframes blink{ 50%{ opacity:0; } }
+
+  .sendIcon{ width:6.2cqw; height:6.2cqw; flex-shrink:0; display:flex; align-items:center; justify-content:center; opacity:0; transition:opacity .18s ease, transform .18s var(--ease-smooth); }
+  .sendIcon.tap{ opacity:0.85; transform:scale(0.86); }
+  .sendIcon svg{ width:3.6cqw; height:3.6cqw; }
+
+  /* ================= CURSOR ================= */
+  #fauxCursor{
+    position:absolute; width:2.6cqw; height:2.6cqw; border-radius:50%;
+    background:rgba(255,255,255,0.92);
+    box-shadow:0 0 14px rgba(255,255,255,0.32), 0 2px 8px rgba(0,0,0,0.45);
+    pointer-events:none; z-index:8; opacity:0;
+  }
+  .clickRipple{
+    position:absolute; width:3.4cqw; height:3.4cqw; border-radius:50%;
+    border:1px solid rgba(255,255,255,0.5);
+    pointer-events:none; z-index:8;
+  }
+
+  /* ================= CAMERA RIG — the continuous shot ================= */
+  #cameraRig{ position:absolute; inset:0; z-index:5; }
+
+  .windowBar{ position:absolute; top:0; left:0; right:0; padding:5.5cqw 6cqw 3cqw; opacity:0; }
+  .browserRow{ display:flex; align-items:center; gap:2.2cqw; }
+  .winDots{ display:flex; gap:1.6cqw; flex-shrink:0; }
+  .winDots span{ width:1.7cqw; height:1.7cqw; border-radius:50%; background:rgba(255,255,255,0.22); }
+  .browserUrlText{ font-family:'Inter',sans-serif; font-size:2.8cqw; letter-spacing:.01em; color:var(--text-secondary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .loadTrack2{ margin-top:3cqw; height:1.5px; background:var(--hairline); border-radius:2px; overflow:hidden; }
+  .loadBar2{ height:100%; width:100%; background:rgba(255,255,255,0.5); transform:scaleX(0); transform-origin:left center; }
+
+  .websiteHero{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+  .heroGlow{
+    position:absolute; width:78cqw; height:78cqw; border-radius:50%;
+    background:radial-gradient(circle, rgba(255,255,255,0.055) 0%, rgba(255,255,255,0) 68%);
+    opacity:0; pointer-events:none;
+  }
+  .heroTitleGroup{ text-align:center; white-space:nowrap; position:relative; opacity:0; }
+  .word-finding{
+    display:inline-block; font-family:'Fraunces',serif; font-weight:500;
+    font-size:6cqw; color:var(--caret-red); margin-right:.06em;
+  }
+  .word-raj{
+    display:inline-block; font-family:'Fraunces',serif; font-weight:500;
+    font-size:6cqw; color:var(--text-primary); letter-spacing:-.01em;
+  }
+  .heroByline{
+    margin-top:3.6cqw;
+    font-family:'Inter',sans-serif; font-size:2.6cqw; letter-spacing:.06em; color:var(--text-secondary);
+    opacity:0;
+  }
+</style>
+</head>
+<body>
+
+<div class="stage">
+  <div class="frame" id="frame">
+
+    <div id="appWorld">
+      <div class="header" id="header">
+        <div class="headerName" id="headerName">Raj Shamani</div>
+        <div class="headerSub" id="headerSub">Creator&nbsp;•&nbsp;Figuring&nbsp;Out</div>
+        <div class="activityStatus" id="activityStatus">
+          <span class="statusLabel2">Activity Status</span>
+          <span class="statusValueRow">
+            <span class="liveDot"></span>
+            <span class="statusValue" id="findingStatus">Finding.</span>
+          </span>
+        </div>
+      </div>
+
+      <div class="messagesWrap">
+        <div class="messageAreaScrim" id="messageAreaScrim"></div>
+        <div class="messages" id="messages"></div>
+      </div>
+
+      <div class="composerWrap">
+        <div class="composer" id="composer">
+          <div class="inputRow">
+            <span class="inputText" id="inputText"></span><span class="caret"></span>
+          </div>
+          <div class="sendIcon" id="sendIcon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 19V5M12 5L6 11M12 5L18 11" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="cameraRig">
+      <div class="windowBar" id="windowBar">
+        <div class="browserRow">
+          <div class="winDots"><span></span><span></span><span></span></div>
+          <div class="browserUrlText">findingrajshamani.github.io</div>
+        </div>
+        <div class="loadTrack2"><div class="loadBar2" id="loadBar2"></div></div>
+      </div>
+
+      <div class="websiteHero" id="websiteHero">
+        <div class="heroGlow" id="heroGlow"></div>
+        <div class="heroTitleGroup" id="heroTitleGroup">
+          <span class="word-finding">Finding</span><span class="word-raj">Raj Shamani</span>
+        </div>
+        <div class="heroByline" id="heroByline">findingrajshamani.github.io</div>
+      </div>
+    </div>
+
+    <div id="fauxCursor"></div>
+
+    <div class="vignette"></div>
+    <div class="grain"></div>
+
+  </div>
+</div>
+
+<script>
+/* ---------------------------------------------------------------
+   UTILITIES
+--------------------------------------------------------------- */
+const wait = ms => new Promise(r => setTimeout(r, ms));
+const rand = (a, b) => a + Math.random() * (b - a);
+function gsapTo(target, vars){ return new Promise(resolve => gsap.to(target, { ...vars, onComplete: resolve })); }
+
+const SENDING_HOLD = 1400; // identical for every send — the rhythm is what makes the payoff land
+
+/* ---------------------------------------------------------------
+   SOUND — synthesized via Web Audio, no external assets.
+
+   Browsers block audio from actually producing sound until the page
+   has had a real user interaction — this autoplay policy applies
+   regardless of what the AudioContext itself is doing. The reel's
+   visual timeline never depends on sound succeeding, but this listener
+   unlocks audio the instant any interaction happens, rather than
+   leaving the tab silent for the rest of the session.
+--------------------------------------------------------------- */
+let audioCtx = null;
+function ensureAudio(){
+  if (audioCtx) return audioCtx;
+  try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){ audioCtx = null; }
+  return audioCtx;
+}
+function unlockAudioOnInteraction(){
+  const unlock = () => {
+    const ctx = ensureAudio();
+    if (ctx && ctx.state === 'suspended'){ ctx.resume().catch(()=>{}); }
+  };
+  ['pointerdown', 'touchstart', 'keydown'].forEach(evt =>
+    window.addEventListener(evt, unlock, { passive: true })
+  );
+}
+unlockAudioOnInteraction();
+function tone({ freq=440, type='sine', gain=0.03, attack=0.004, decay=0.05 } = {}){
+  const ctx = ensureAudio(); if (!ctx) return;
+  try{
+    const osc = ctx.createOscillator(); const g = ctx.createGain();
+    osc.type = type; osc.frequency.value = freq;
+    g.gain.setValueAtTime(0, ctx.currentTime);
+    g.gain.linearRampToValueAtTime(gain, ctx.currentTime + attack);
+    g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + attack + decay);
+    osc.connect(g); g.connect(ctx.destination);
+    osc.start(); osc.stop(ctx.currentTime + attack + decay + 0.03);
+  }catch(e){}
+}
+const keyClick     = () => tone({ freq: 800 + Math.random()*380, gain:0.015, attack:0.002, decay:0.024 });
+const sendClick    = () => tone({ freq: 520, gain:0.05, attack:0.004, decay:0.09 });
+const failSound    = () => tone({ freq: 210, gain:0.04, decay:0.22 });
+const successSound = () => { tone({ freq:660, gain:0.04, decay:0.14 }); setTimeout(()=>tone({freq:900, gain:0.032, decay:0.2}),110); };
+const linkClick    = () => tone({ freq: 600, gain:0.045, decay:0.07 });
+const hoverTone    = () => tone({ freq: 1150, gain:0.016, decay:0.05 });
+const deleteTick   = () => tone({ freq: 250 + Math.random()*50, gain:0.007, attack:0.002, decay:0.018 });
+const loadTick     = () => tone({ freq: 760, gain:0.02, decay:0.06 });
+const cursorWhisper= () => tone({ freq: 1400, gain:0.006, attack:0.01, decay:0.08 });
+function whoosh(){
+  const ctx = ensureAudio(); if (!ctx) return;
+  try{
+    const osc = ctx.createOscillator(); const g = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(220, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(480, ctx.currentTime + 0.9);
+    g.gain.setValueAtTime(0, ctx.currentTime);
+    g.gain.linearRampToValueAtTime(0.028, ctx.currentTime + 0.15);
+    g.gain.linearRampToValueAtTime(0.0001, ctx.currentTime + 0.9);
+    osc.connect(g); g.connect(ctx.destination);
+    osc.start(); osc.stop(ctx.currentTime + 0.95);
+  }catch(e){}
+}
+
+let ambient = null;
+function startAmbient(){
+  const ctx = ensureAudio(); if (!ctx) return;
+  try{
+    const g = ctx.createGain(); g.gain.value = 0.0001;
+    const o1 = ctx.createOscillator(); o1.type='sine'; o1.frequency.value = 108;
+    const o2 = ctx.createOscillator(); o2.type='sine'; o2.frequency.value = 161.7;
+    o1.connect(g); o2.connect(g); g.connect(ctx.destination);
+    o1.start(); o2.start();
+    g.gain.linearRampToValueAtTime(0.014, ctx.currentTime + 1.4);
+    ambient = { g, ctx, o1, o2 };
+  }catch(e){}
+}
+function rampAmbient(target, dur){
+  if (!ambient) return;
+  const { g, ctx } = ambient;
+  g.gain.cancelScheduledValues(ctx.currentTime);
+  g.gain.setValueAtTime(g.gain.value, ctx.currentTime);
+  g.gain.linearRampToValueAtTime(target, ctx.currentTime + dur);
+}
+
+/* ---------------------------------------------------------------
+   TYPING & DELETING
+--------------------------------------------------------------- */
+async function typeText(el, text, mode = 'default'){
+  el.textContent = '';
+  for (let i = 0; i < text.length; i++){
+    const ch = text[i];
+    el.textContent += ch;
+    if (ch !== ' ') keyClick();
+    let d;
+    if (mode === 'confident')       { d = rand(24, 48);  if (Math.random() < 0.03) d += rand(45, 90); }
+    else if (mode === 'considering'){ d = rand(42, 84);  if (Math.random() < 0.10) d += rand(70, 150); }
+    else                             { d = rand(30, 68);  if (Math.random() < 0.10) d += rand(70, 150); }
+    if (/[,.?]/.test(ch)) d += rand(55, 120); // a breath after punctuation, like a person actually composing the thought
+    await wait(d);
+  }
+}
+async function deleteSlow(el){
+  const text = el.textContent;
+  const len = text.length;
+  for (let i = len; i > 0; i--){
+    el.textContent = text.slice(0, i - 1);
+    if ((len - i) % 2 === 0) deleteTick();
+    const progress = 1 - i / len;
+    await wait(22 + progress * 34 + rand(-6, 14));
+  }
+}
+
+const pauseShort     = () => wait(rand(350, 480));
+const pauseRethink   = () => wait(rand(550, 750));
+const pauseConfident = () => wait(rand(220, 320));
+
+async function tapSend(){
+  const el = document.getElementById('sendIcon');
+  el.classList.add('tap');
+  sendClick();
+  await wait(150);
+  el.classList.remove('tap');
+  await wait(100);
+}
+
+/* ---------------------------------------------------------------
+   CARDS
+--------------------------------------------------------------- */
+function addCard(text, { link = false } = {}){
+  const container = document.getElementById('messages');
+  const existing = Array.from(container.querySelectorAll('.card'));
+  const before = existing.map(el => el.getBoundingClientRect().top);
+
+  const card = document.createElement('div');
+  card.className = 'card';
+
+  const txt = document.createElement('div');
+  txt.className = 'cardText' + (link ? ' cardLink' : '');
+  txt.textContent = text;
+
+  const statusRow = document.createElement('div');
+  statusRow.className = 'cardStatus';
+  const dot = document.createElement('span'); dot.className = 'statusDot sending';
+  const label = document.createElement('span'); label.className = 'statusLabel';
+  statusRow.appendChild(dot); statusRow.appendChild(label);
+
+  card.appendChild(txt);
+  card.appendChild(statusRow);
+  container.appendChild(card);
+
+  const after = existing.map(el => el.getBoundingClientRect().top);
+  existing.forEach((el, i) => {
+    const dy = before[i] - after[i];
+    if (Math.abs(dy) > 0.5){
+      gsap.set(el, { y: dy });
+      gsap.to(el, { y: 0, duration: 0.65, ease: 'power3.out' });
+    }
+  });
+
+  gsap.set(card, { opacity: 0, y: 16, scale: 0.985, filter: 'blur(4px)' });
+  gsap.to(card, { opacity: 1, y: 0, scale: 1, filter: 'blur(0px)', duration: 0.75, ease: 'power3.out' });
+
+  document.getElementById('inputText').textContent = '';
+  return card;
+}
+function setCardStatus(card, text, state){
+  const dot = card.querySelector('.statusDot');
+  const label = card.querySelector('.statusLabel');
+  dot.className = 'statusDot ' + state;
+  gsap.to(label, { opacity: 0, duration: 0.2, onComplete: () => {
+    label.textContent = text;
+    gsap.to(label, { opacity: 1, duration: 0.35 });
+  }});
+}
+async function tapCardText(card){
+  const el = card.querySelector('.cardText');
+  await gsapTo(el, { scale: 0.97, duration: 0.12, ease: 'power1.in' });
+  await gsapTo(el, { scale: 1, duration: 0.2, ease: 'power1.out' });
+}
+
+/* ---------------------------------------------------------------
+   "Finding..." EASTER EGG
+--------------------------------------------------------------- */
+let findingHandle = null;
+function startFindingLoop(){
+  const el = document.getElementById('findingStatus');
+  const states = ['Finding.', 'Finding..', 'Finding...'];
+  let i = 0;
+  return setInterval(() => {
+    i = (i + 1) % states.length;
+    gsap.to(el, { opacity: 0.5, duration: 0.4, onComplete: () => {
+      el.textContent = states[i];
+      gsap.to(el, { opacity: 1, duration: 0.55 });
+    }});
+  }, 1000);
+}
+
+/* ---------------------------------------------------------------
+   THE HOOK — black screen, caret only, camera pulls back while
+   the first message types. Transform-origin is pinned to the
+   caret's exact screen position so it never moves as the world
+   scales down around it.
+
+   prepareHookZoom() is synchronous and runs immediately on load —
+   deliberately NOT gated behind font-loading — so there is no
+   window in which an un-zoomed, un-cropped interface could flash
+   on screen before the tight framing is applied.
+--------------------------------------------------------------- */
+function prepareHookZoom(){
+  const world = document.getElementById('appWorld');
+  const frame = document.getElementById('frame');
+  const caret = document.querySelector('.caret');
+
+  // neutralize the CSS fallback transform before measuring — otherwise the
+  // already-applied scale(9) contaminates getBoundingClientRect() and every
+  // distance comes back scaled by 9x
+  world.style.transform = 'none';
+  world.style.transformOrigin = '0px 0px';
+
+  const frameRect = frame.getBoundingClientRect();
+  const worldRect = world.getBoundingClientRect();
+  const caretRect = caret.getBoundingClientRect();
+
+  // caret's true resting position, in appWorld's own local (untransformed) space
+  const caretX = caretRect.left - worldRect.left + caretRect.width / 2;
+  const caretY = caretRect.top - worldRect.top + caretRect.height / 2;
+
+  // dead center of the frame — where the caret opens
+  const centerX = frameRect.width / 2;
+  const centerY = frameRect.height / 2;
+
+  const START_SCALE = 7;
+  // solve for the translate that places caretX/Y at the frame's center when scaled up
+  const x0 = centerX - caretX * START_SCALE;
+  const y0 = centerY - caretY * START_SCALE;
+
+  gsap.set(world, { x: x0, y: y0, scale: START_SCALE });
+}
+
+async function runHookAndFirstMessage(){
+  const inputText = document.getElementById('inputText');
+  const world = document.getElementById('appWorld');
+
+  await wait(1000); // a full second of nothing but the caret — let the curiosity sit
+
+  startAmbient();
+  findingHandle = startFindingLoop();
+
+  // One continuous camera move: the caret travels from center-frame down to
+  // its true resting position while the whole interface simultaneously
+  // shrinks into place around it. This is real translate + scale together —
+  // not a zoom pinned to one static point, which is what reads as a slide
+  // transition instead of camera motion.
+  const pullBack = gsapTo(world, { x: 0, y: 0, scale: 1, duration: 1.75, ease: 'sine.inOut' });
+
+  await typeText(inputText, 'Hey Raj,', 'default');
+  await pullBack; // guarantee the full interface has settled before we hold
+
+  await wait(rand(500, 600)); // the hold
+
+  // the camera is never fully still through the rest of the scene
+  gsap.to(world, { scale: 1.012, duration: 24, ease: 'sine.inOut' });
+}
+
+/* ---------------------------------------------------------------
+   OPENING SEND — the cursor's first appearance, clicking Send on
+   the very first message. Mirrors the language of the ending's
+   cursor sequence so the two bookend each other.
+--------------------------------------------------------------- */
+async function cursorClickSend(){
+  const frame = document.getElementById('frame');
+  const cursor = document.getElementById('fauxCursor');
+  const btn = document.getElementById('sendIcon');
+  const frameRect = frame.getBoundingClientRect();
+  const btnRect = btn.getBoundingClientRect();
+
+  const targetX = btnRect.left + btnRect.width * 0.5 - frameRect.left;
+  const targetY = btnRect.top + btnRect.height * 0.5 - frameRect.top;
+  const startX = targetX + rand(48, 76);
+  const startY = targetY + rand(66, 96);
+
+  gsap.set(cursor, { xPercent: -50, yPercent: -50, left: startX, top: startY, opacity: 0, scale: 1 });
+  await gsapTo(cursor, { opacity: 1, duration: 0.18, ease: 'power2.out' });
+  cursorWhisper();
+  await gsapTo(cursor, { left: targetX, top: targetY, duration: 0.3, ease: 'power2.inOut' });
+  await wait(60);
+
+  await gsapTo(cursor, { scale: 0.68, duration: 0.09, ease: 'power1.in' });
+  spawnRipple(targetX, targetY);
+  await tapSend();
+  await gsapTo(cursor, { scale: 1, duration: 0.15, ease: 'power2.out' });
+  await gsapTo(cursor, { opacity: 0, duration: 0.2, ease: 'power2.inOut' });
+}
+
+/* ---------------------------------------------------------------
+   THE CURSOR SEQUENCE — the protagonist of the ending.
+--------------------------------------------------------------- */
+function spawnRipple(x, y){
+  const frame = document.getElementById('frame');
+  const r = document.createElement('div');
+  r.className = 'clickRipple';
+  r.style.left = x + 'px'; r.style.top = y + 'px';
+  frame.appendChild(r);
+  gsap.set(r, { xPercent: -50, yPercent: -50, scale: 0.3, opacity: 0.5 });
+  gsap.to(r, { scale: 2.6, opacity: 0, duration: 0.6, ease: 'power2.out', onComplete: () => r.remove() });
+}
+
+async function cursorSequence(deliveredCard){
+  const frame = document.getElementById('frame');
+  const cursor = document.getElementById('fauxCursor');
+  const frameRect = frame.getBoundingClientRect();
+  const textEl = deliveredCard.querySelector('.cardText');
+  const targetRect = textEl.getBoundingClientRect();
+
+  const targetX = targetRect.left + targetRect.width * 0.38 - frameRect.left;
+  const targetY = targetRect.top + targetRect.height * 0.5 - frameRect.top;
+  const startX = targetX + rand(45, 75);
+  const startY = targetY + rand(95, 135);
+  const midX = targetX + rand(-18, 18);
+  const midY = targetY + rand(42, 62);
+
+  gsap.set(cursor, { xPercent: -50, yPercent: -50, left: startX, top: startY, opacity: 0, scale: 1 });
+  await gsapTo(cursor, { opacity: 1, duration: 0.2, ease: 'power2.out' });
+  cursorWhisper();
+  await gsapTo(cursor, { left: midX, top: midY, duration: 0.32, ease: 'power2.inOut' });
+  await wait(rand(60, 100)); // a small human correction, not a straight machine path
+  await gsapTo(cursor, { left: targetX, top: targetY, duration: 0.3, ease: 'power3.out' });
+
+  deliveredCard.classList.add('hoverGlow');
+  hoverTone();
+  await wait(200);
+  rampAmbient(0.0008, 0.5); // the quiet before the click — makes it land harder
+  await wait(250);
+
+  await gsapTo(cursor, { scale: 0.68, duration: 0.09, ease: 'power1.in' });
+  linkClick();
+  spawnRipple(targetX, targetY);
+  tapCardText(deliveredCard);
+  await gsapTo(cursor, { scale: 1, duration: 0.15, ease: 'power2.out' });
+  await wait(80);
+  await gsapTo(cursor, { opacity: 0, duration: 0.2, ease: 'power2.inOut' });
+}
+
+/* ---------------------------------------------------------------
+   THE SIGNATURE TRANSITION. Two clean beats instead of one fragile
+   one: the URL isolates itself, centered and plain — like any real
+   browser bringing a loading destination into focus — then settles
+   into place as the page's byline while the styled title arrives
+   above it. No mid-motion font-morphing, no cut.
+--------------------------------------------------------------- */
+async function signatureTransition(deliveredCard){
+  if (document.fonts && document.fonts.ready){ await document.fonts.ready; }
+
+  // guarantee-fit safety net: measure the title's real rendered width against
+  // the frame and scale it down if it would ever overflow, regardless of
+  // exact font metrics
+  const titleGroup = document.getElementById('heroTitleGroup');
+  const frameForFit = document.getElementById('frame');
+  const titleWidth = titleGroup.getBoundingClientRect().width;
+  const safeWidth = frameForFit.getBoundingClientRect().width * 0.84;
+  if (titleWidth > safeWidth){
+    const fitScale = safeWidth / titleWidth;
+    titleGroup.style.transform = `scale(${fitScale})`;
+  }
+
+  const frame = document.getElementById('frame');
+  clearInterval(findingHandle);
+  gsapTo('#appWorld', { opacity: 0, duration: 0.4, ease: 'power2.inOut' });
+
+  gsap.set('#cameraRig', { transformOrigin: '50% 50%' });
+
+  gsap.set('#windowBar', { opacity: 0, y: -10 });
+  gsap.set('.winDots span', { opacity: 0 });
+  gsap.to('#windowBar', { opacity: 1, y: 0, duration: 0.35, ease: 'power2.out' });
+  gsap.to('.winDots span', { opacity: 1, duration: 0.22, stagger: 0.06, ease: 'power1.out' });
+  whoosh();
+  rampAmbient(0.02, 1.3);
+
+  // one gentle continuous ambient push for the whole scene — the camera
+  // is never fully still, but nothing here depends on it for staging
+  const cameraPush = gsapTo('#cameraRig', { scale: 1.5, duration: 4.2, ease: 'sine.inOut' });
+
+  await gsapTo('#loadBar2', { scaleX: 1, duration: 0.6, ease: 'power1.inOut' });
+  loadTick();
+  await wait(300); // let the loaded URL actually register before the chrome clears
+  await gsapTo('#windowBar', { opacity: 0, y: -10, duration: 0.35, ease: 'power2.inOut' });
+
+  // BEAT ONE — the URL brings itself into focus: plain text, isolated,
+  // centered, larger than its resting size. Still just a loading URL.
+  const urlEl = document.getElementById('heroByline');
+  const frameRect = frame.getBoundingClientRect();
+  const urlNatural = urlEl.getBoundingClientRect(); // its true resting position, already laid out beneath the (invisible) title
+
+  const ISOLATE_SCALE = 1.7;
+  const camScale = gsap.getProperty('#cameraRig', 'scale') || 1;
+  const naturalCenterX = urlNatural.left + urlNatural.width / 2;
+  const naturalCenterY = urlNatural.top + urlNatural.height / 2;
+  const dx = (frameRect.left + frameRect.width / 2 - naturalCenterX) / camScale;
+  const dy = (frameRect.top + frameRect.height / 2 - naturalCenterY) / camScale;
+
+  gsap.set(urlEl, { x: dx, y: dy, scale: ISOLATE_SCALE, opacity: 0, color: '#fff' });
+  await gsapTo(urlEl, { opacity: 1, duration: 0.5, ease: 'power2.out' });
+  await wait(650); // hold — let it register as a real destination loading
+
+  // BEAT TWO — it settles into its byline position while the page
+  // builds in around it: the title arrives where the URL just was.
+  gsapTo(urlEl, { x: 0, y: 0, scale: 1, duration: 0.9, ease: 'power2.inOut', color: 'rgba(255,255,255,0.65)' });
+  await wait(250);
+  gsap.to('#heroGlow', { opacity: 1, duration: 0.8, ease: 'power2.out' });
+  await gsapTo('#heroTitleGroup', { opacity: 1, duration: 0.7, ease: 'power2.out' });
+
+  await cameraPush;
+  rampAmbient(0.0001, 1.0);
+  await wait(450);
+}
+
+/* ---------------------------------------------------------------
+   MASTER SEQUENCE
+--------------------------------------------------------------- */
+async function runSequence(){
+  const inputText = document.getElementById('inputText');
+
+  await runHookAndFirstMessage();
+
+  /* ---- attempt one resolves ---- */
+  await cursorClickSend();
+  const c1 = addCard('Hey Raj,');
+  setCardStatus(c1, 'Sending…', 'sending');
+  await wait(SENDING_HOLD);
+  setCardStatus(c1, 'Not delivered', 'failed');
+  failSound();
+  await wait(450);
+
+  /* ---- attempt two ---- */
+  await typeText(inputText, 'Can I get 30 seconds of your time?', 'default');
+  await pauseShort();
+  await tapSend();
+  const c2 = addCard('Can I get 30 seconds of your time?');
+  setCardStatus(c2, 'Sending…', 'sending');
+  await wait(SENDING_HOLD);
+  setCardStatus(c2, 'Not delivered', 'failed');
+  failSound();
+  await wait(400);
+
+  /* ---- attempt three: typed, reconsidered, deleted. never sent ---- */
+  await typeText(inputText, "I'd love to tell you about my startup...", 'considering');
+  await pauseRethink();
+  inputText.classList.add('selected');
+  await wait(180);
+  rampAmbient(0.003, 0.6);
+  await deleteSlow(inputText);
+  inputText.classList.remove('selected');
+  await wait(650); // the realization, held — no dialogue needed
+
+  /* ---- the different message ---- */
+  rampAmbient(0.013, 0.7);
+  await typeText(inputText, 'findingrajshamani.github.io', 'confident');
+  await pauseConfident();
+  await tapSend();
+  const c3 = addCard('findingrajshamani.github.io', { link: true });
+  setCardStatus(c3, 'Sending…', 'sending');
+  rampAmbient(0.0006, 0.5); // almost empty — makes the click land harder
+  await wait(SENDING_HOLD + 100);
+  setCardStatus(c3, 'Delivered ✓', 'success');
+  successSound();
+  rampAmbient(0.016, 0.6);
+  await wait(750); // let the audience enjoy it
+
+  /* ---- the cursor becomes the protagonist ---- */
+  await cursorSequence(c3);
+
+  /* ---- one continuous cinematic movement, no cuts ---- */
+  await signatureTransition(c3);
+}
+
+// The zoom is applied synchronously, right now — no font dependency,
+// no delay, no window in which the un-zoomed interface could flash.
+prepareHookZoom();
+runSequence();
+</script>
+</body>
+</html>
