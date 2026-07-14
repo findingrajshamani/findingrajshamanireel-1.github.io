@@ -29,7 +29,11 @@
      ================================================================== */
 
   :root{
-    --bg:             #FFFFFF;
+    --bg:             #0b0b0c;
+    --surface-recessed: #060607;
+    --surface-header: #101011;
+    --surface-card:   #1c1c1f;
+    --surface-composer: #232328;
     --text-primary:   #FFFFFF;
     --text-secondary: rgba(255,255,255,0.65);
     --text-subtle:    rgba(255,255,255,0.35);
@@ -53,7 +57,7 @@
     width:100vw; height:100vh;
     max-width:56.25vh; max-height:177.78vw;
     aspect-ratio:9/16;
-    background:radial-gradient(ellipse 130% 75% at 50% 12%, #0c0c0e 0%, #070707 58%);
+    background:radial-gradient(ellipse 130% 75% at 50% 12%, #0f0f10 0%, #0b0b0c 58%);
     overflow:hidden;
     container-type:inline-size;
     container-name:frame;
@@ -74,10 +78,11 @@
      a frame, even before JS runs, where the un-zoomed interface is visible. */
   #appWorld{
     position:absolute; inset:0; z-index:2; display:flex; flex-direction:column;
-    transform:scale(9); transform-origin:50% 60%;
+    transform:scale(7); transform-origin:50% 60%;
+    will-change:transform;
   }
 
-  .header{ padding:10.5cqw 6cqw 2cqw; flex-shrink:0; }
+  .header{ padding:10.5cqw 6cqw 2cqw; flex-shrink:0; background:linear-gradient(180deg, var(--surface-header), rgba(10,10,10,0) 100%); }
   .headerName{
     font-size:5.8cqw; font-weight:600; letter-spacing:-.012em; color:var(--text-primary);
   }
@@ -86,17 +91,26 @@
     font-size:3cqw; font-weight:400; letter-spacing:.015em; color:var(--text-secondary);
   }
   .activityStatus{ margin-top:4.8cqw; display:flex; flex-direction:column; gap:1.1cqw; }
-  .statusLabel2{ font-size:2.05cqw; letter-spacing:.14em; text-transform:uppercase; color:var(--text-subtle); }
+  .statusLabel2{ font-size:2.05cqw; letter-spacing:.14em; text-transform:uppercase; color:rgba(255,255,255,0.46); }
   .statusValueRow{ display:flex; align-items:center; gap:1.4cqw; }
   .liveDot{ width:1.3cqw; height:1.3cqw; border-radius:50%; background:var(--success); animation:livePulse 1.8s ease-in-out infinite; }
   @keyframes livePulse{ 0%,100%{ opacity:.35; transform:scale(.82); } 50%{ opacity:.85; transform:scale(1); } }
-  .statusValue{ font-size:2.75cqw; letter-spacing:.02em; color:var(--text-secondary); font-weight:500; }
+  .statusValue{ font-size:2.75cqw; letter-spacing:.02em; color:rgba(255,255,255,0.8); font-weight:500; }
 
   .messagesWrap{ position:relative; flex:1; min-height:0; display:flex; flex-direction:column; }
   .messageAreaScrim{
     position:absolute; inset:0; z-index:0; pointer-events:none;
-    background:linear-gradient(180deg, rgba(255,255,255,0.022), rgba(255,255,255,0) 45%);
+    background:linear-gradient(180deg, rgba(255,255,255,0.018), var(--surface-recessed) 12%, var(--surface-recessed) 88%, rgba(255,255,255,0.014));
+    box-shadow:inset 0 12px 26px rgba(0,0,0,0.32), inset 0 -12px 26px rgba(0,0,0,0.24);
   }
+  .dateDivider{
+    position:relative; z-index:1; flex-shrink:0;
+    display:flex; align-items:center; gap:2.4cqw;
+    padding:3cqw 6cqw 0;
+    opacity:0.5;
+  }
+  .dateDivider::before, .dateDivider::after{ content:''; flex:1; height:1px; background:var(--hairline); }
+  .dateDivider span{ font-size:2.05cqw; letter-spacing:.12em; text-transform:uppercase; color:var(--text-subtle); white-space:nowrap; }
   .messages{
     position:relative; z-index:1;
     flex:1; min-height:0;
@@ -109,27 +123,32 @@
   .card{
     width:100%;
     background:
-      radial-gradient(120% 140% at 14% 0%, rgba(255,255,255,0.05), rgba(255,255,255,0) 55%),
-      linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.018));
-    border:1px solid var(--border-soft);
+      linear-gradient(125deg, rgba(255,255,255,0.055) 0%, rgba(255,255,255,0) 32%, rgba(255,255,255,0) 68%, rgba(255,255,255,0.03) 100%),
+      linear-gradient(180deg, rgba(255,255,255,0.058), rgba(255,255,255,0.014) 45%, rgba(255,255,255,0.028) 100%),
+      radial-gradient(120% 140% at 14% 0%, rgba(255,255,255,0.055), rgba(255,255,255,0) 55%),
+      var(--surface-card);
+    border-top:1px solid rgba(255,255,255,0.22);
+    border-left:1px solid rgba(255,255,255,0.13);
+    border-right:1px solid rgba(255,255,255,0.08);
+    border-bottom:1px solid rgba(255,255,255,0.045);
     border-radius:3.6cqw;
     padding:4.5cqw 5cqw;
     backdrop-filter:blur(22px) saturate(150%);
     -webkit-backdrop-filter:blur(22px) saturate(150%);
     box-shadow:
-      inset 0 1px 0 rgba(255,255,255,0.07),
-      inset 0 0 0 1px rgba(255,255,255,0.015),
-      0 2px 10px rgba(0,0,0,0.26),
-      0 18px 46px rgba(0,0,0,0.36);
+      inset 0 1px 0 rgba(255,255,255,0.13),
+      inset 0 -10px 22px rgba(0,0,0,0.22),
+      0 2px 10px rgba(0,0,0,0.32),
+      0 22px 52px rgba(0,0,0,0.42);
     transition:border-color .45s ease, box-shadow .45s ease;
   }
   .card.hoverGlow{
-    border-color:rgba(255,255,255,0.24);
+    border-top-color:rgba(255,255,255,0.3);
     box-shadow:
-      inset 0 1px 0 rgba(255,255,255,0.1),
-      inset 0 0 0 1px rgba(255,255,255,0.02),
-      0 2px 10px rgba(0,0,0,0.28),
-      0 18px 46px rgba(0,0,0,0.38),
+      inset 0 1px 0 rgba(255,255,255,0.15),
+      inset 0 -10px 22px rgba(0,0,0,0.22),
+      0 2px 10px rgba(0,0,0,0.32),
+      0 22px 52px rgba(0,0,0,0.42),
       0 0 46px rgba(255,255,255,0.055);
   }
   .cardText{
@@ -141,7 +160,9 @@
     text-decoration-color:rgba(255,255,255,0.28);
     text-underline-offset:0.5cqw;
   }
-  .cardStatus{ display:flex; align-items:center; gap:1.7cqw; margin-top:3cqw; }
+  .cardStatus{ display:flex; align-items:center; justify-content:space-between; margin-top:3cqw; }
+  .statusLeft{ display:flex; align-items:center; gap:1.7cqw; }
+  .cardTime{ font-size:2.3cqw; letter-spacing:.02em; color:var(--text-subtle); flex-shrink:0; }
   .statusDot{ width:1.6cqw; height:1.6cqw; border-radius:50%; flex-shrink:0; background:rgba(255,255,255,0.45); }
   .statusDot.sending{ animation:dotPulse 1.15s ease-in-out infinite; }
   .statusDot.failed{ background:var(--error); animation:none; }
@@ -151,26 +172,37 @@
 
   .composerWrap{ padding:0 5cqw 15cqw; flex-shrink:0; }
   .composer{
+    position:relative;
     display:flex; align-items:center; gap:3cqw;
     padding:4.5cqw 5cqw;
+  }
+  .composerSurface{
+    position:absolute; inset:0;
     background:
-      radial-gradient(130% 160% at 18% 0%, rgba(255,255,255,0.05), rgba(255,255,255,0) 60%),
-      linear-gradient(160deg, #131316, #0d0d0f);
-    border:1px solid var(--border-crisp);
+      linear-gradient(125deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0) 30%, rgba(255,255,255,0) 70%, rgba(255,255,255,0.035) 100%),
+      linear-gradient(180deg, rgba(255,255,255,0.065), rgba(255,255,255,0.016) 45%, rgba(255,255,255,0.032) 100%),
+      radial-gradient(130% 160% at 18% 0%, rgba(255,255,255,0.06), rgba(255,255,255,0) 60%),
+      linear-gradient(160deg, var(--surface-composer), #16161a);
+    border-top:1px solid rgba(255,255,255,0.27);
+    border-left:1px solid rgba(255,255,255,0.16);
+    border-right:1px solid rgba(255,255,255,0.1);
+    border-bottom:1px solid rgba(255,255,255,0.055);
     border-radius:5.2cqw;
     box-shadow:
-      inset 0 1px 0 rgba(255,255,255,0.085),
-      inset 0 0 0 1px rgba(255,255,255,0.02),
-      0 4px 14px rgba(0,0,0,0.3),
-      0 24px 56px rgba(0,0,0,0.42);
+      inset 0 1px 0 rgba(255,255,255,0.14),
+      inset 0 -10px 22px rgba(0,0,0,0.22),
+      0 4px 14px rgba(0,0,0,0.32),
+      0 28px 60px rgba(0,0,0,0.46);
+    opacity:0;
+    pointer-events:none;
   }
-  .inputRow{ flex:1; min-height:5cqw; display:flex; align-items:center; font-size:3.65cqw; color:var(--text-primary); letter-spacing:.003em; }
+  .inputRow{ position:relative; z-index:1; flex:1; min-height:5cqw; display:flex; align-items:center; font-size:3.65cqw; color:var(--text-primary); letter-spacing:.003em; }
   .inputText{ display:inline; border-radius:2px; transition:background .22s ease; }
   .inputText.selected{ background:rgba(255,255,255,0.15); }
-  .caret{ width:2px; height:4cqw; background:var(--caret-red); margin-left:.4cqw; flex-shrink:0; animation:blink 1s steps(1,end) infinite; }
+  .caret{ width:1.6px; height:3.4cqw; border-radius:1px; background:var(--caret-red); margin-left:.4cqw; flex-shrink:0; animation:blink 0.5833s steps(1,end) infinite; }
   @keyframes blink{ 50%{ opacity:0; } }
 
-  .sendIcon{ width:6.2cqw; height:6.2cqw; flex-shrink:0; display:flex; align-items:center; justify-content:center; opacity:0; transition:opacity .18s ease, transform .18s var(--ease-smooth); }
+  .sendIcon{ position:relative; z-index:1; width:6.2cqw; height:6.2cqw; flex-shrink:0; display:flex; align-items:center; justify-content:center; opacity:0.4; transition:opacity .18s ease, transform .18s var(--ease-smooth); }
   .sendIcon.tap{ opacity:0.85; transform:scale(0.86); }
   .sendIcon svg{ width:3.6cqw; height:3.6cqw; }
 
@@ -188,7 +220,7 @@
   }
 
   /* ================= CAMERA RIG — the continuous shot ================= */
-  #cameraRig{ position:absolute; inset:0; z-index:5; }
+  #cameraRig{ position:absolute; inset:0; z-index:5; will-change:transform; }
 
   .windowBar{ position:absolute; top:0; left:0; right:0; padding:5.5cqw 6cqw 3cqw; opacity:0; }
   .browserRow{ display:flex; align-items:center; gap:2.2cqw; }
@@ -200,11 +232,14 @@
 
   .websiteHero{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
   .heroGlow{
-    position:absolute; width:78cqw; height:78cqw; border-radius:50%;
-    background:radial-gradient(circle, rgba(255,255,255,0.055) 0%, rgba(255,255,255,0) 68%);
+    position:absolute; width:84cqw; height:84cqw; border-radius:50%;
+    background:radial-gradient(circle, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0) 66%);
     opacity:0; pointer-events:none;
   }
-  .heroTitleGroup{ text-align:center; white-space:nowrap; position:relative; opacity:0; }
+  .heroTitleGroup{
+    text-align:center; white-space:nowrap; position:relative; opacity:0;
+    filter:drop-shadow(0 2px 30px rgba(255,255,255,0.075));
+  }
   .word-finding{
     display:inline-block; font-family:'Fraunces',serif; font-weight:500;
     font-size:6cqw; color:var(--caret-red); margin-right:.06em;
@@ -216,6 +251,11 @@
   .heroByline{
     margin-top:3.6cqw;
     font-family:'Inter',sans-serif; font-size:2.6cqw; letter-spacing:.06em; color:var(--text-secondary);
+    opacity:0;
+  }
+  .heroFootnote{
+    margin-top:2.2cqw;
+    font-family:'Inter',sans-serif; font-size:1.9cqw; letter-spacing:.1em; text-transform:uppercase; color:var(--text-subtle);
     opacity:0;
   }
 </style>
@@ -240,11 +280,13 @@
 
       <div class="messagesWrap">
         <div class="messageAreaScrim" id="messageAreaScrim"></div>
+        <div class="dateDivider"><span>Today</span></div>
         <div class="messages" id="messages"></div>
       </div>
 
       <div class="composerWrap">
         <div class="composer" id="composer">
+          <div class="composerSurface" id="composerSurface"></div>
           <div class="inputRow">
             <span class="inputText" id="inputText"></span><span class="caret"></span>
           </div>
@@ -272,6 +314,7 @@
           <span class="word-finding">Finding</span><span class="word-raj">Raj Shamani</span>
         </div>
         <div class="heroByline" id="heroByline">findingrajshamani.github.io</div>
+        <div class="heroFootnote" id="heroFootnote">An experiment — built instead of a message</div>
       </div>
     </div>
 
@@ -340,6 +383,7 @@ const hoverTone    = () => tone({ freq: 1150, gain:0.016, decay:0.05 });
 const deleteTick   = () => tone({ freq: 250 + Math.random()*50, gain:0.007, attack:0.002, decay:0.018 });
 const loadTick     = () => tone({ freq: 760, gain:0.02, decay:0.06 });
 const cursorWhisper= () => tone({ freq: 1400, gain:0.006, attack:0.01, decay:0.08 });
+const materializeTone = () => tone({ freq: 340, gain: 0.022, attack: 0.16, decay: 0.55 });
 function whoosh(){
   const ctx = ensureAudio(); if (!ctx) return;
   try{
@@ -355,25 +399,103 @@ function whoosh(){
   }catch(e){}
 }
 
+// Pink noise via Paul Kellet's refined method — natural, low-hiss,
+// weighted toward low frequencies. This is the actual texture of "air"
+// or room tone; a pure oscillator can never sound like this because it
+// has a single discrete pitch, which is what reads as musical/droney.
+function createNoiseBuffer(ctx, duration){
+  const bufferSize = Math.floor(ctx.sampleRate * duration);
+  const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+  const data = buffer.getChannelData(0);
+  let b0=0,b1=0,b2=0,b3=0,b4=0,b5=0,b6=0;
+  for (let i = 0; i < bufferSize; i++){
+    const white = Math.random() * 2 - 1;
+    b0 = 0.99886*b0 + white*0.0555179;
+    b1 = 0.99332*b1 + white*0.0750759;
+    b2 = 0.96900*b2 + white*0.1538520;
+    b3 = 0.86650*b3 + white*0.3104856;
+    b4 = 0.55000*b4 + white*0.5329522;
+    b5 = -0.7616*b5  - white*0.0168980;
+    const pink = b0+b1+b2+b3+b4+b5+b6+white*0.5362;
+    b6 = white*0.115926;
+    data[i] = pink * 0.10;
+  }
+  return buffer;
+}
+
 let ambient = null;
 function startAmbient(){
   const ctx = ensureAudio(); if (!ctx) return;
   try{
-    const g = ctx.createGain(); g.gain.value = 0.0001;
-    const o1 = ctx.createOscillator(); o1.type='sine'; o1.frequency.value = 108;
-    const o2 = ctx.createOscillator(); o2.type='sine'; o2.frequency.value = 161.7;
-    o1.connect(g); o2.connect(g); g.connect(ctx.destination);
-    o1.start(); o2.start();
-    g.gain.linearRampToValueAtTime(0.014, ctx.currentTime + 1.4);
-    ambient = { g, ctx, o1, o2 };
+    const master = ctx.createGain();
+    master.gain.value = 0.0001;
+    master.connect(ctx.destination);
+
+    // two independent noise layers, gently spread left/right, each shaped
+    // as a band (highpass removes rumble, lowpass removes hiss) so it
+    // reads as air moving in a room — not a hum, not static
+    const layerConfigs = [
+      { duration: 7.3, pan: -0.3, hp: 170, lp: 3600 },
+      { duration: 8.1, pan:  0.3, hp: 210, lp: 4300 },
+    ];
+    const layers = layerConfigs.map(cfg => {
+      const src = ctx.createBufferSource();
+      src.buffer = createNoiseBuffer(ctx, cfg.duration);
+      src.loop = true;
+
+      const highpass = ctx.createBiquadFilter();
+      highpass.type = 'highpass';
+      highpass.frequency.value = cfg.hp;
+      highpass.Q.value = 0.25;
+
+      const lowpass = ctx.createBiquadFilter();
+      lowpass.type = 'lowpass';
+      lowpass.frequency.value = cfg.lp;
+      lowpass.Q.value = 0.25;
+
+      let outNode = lowpass;
+      if (ctx.createStereoPanner){
+        const panner = ctx.createStereoPanner();
+        panner.pan.value = cfg.pan;
+        lowpass.connect(panner);
+        outNode = panner;
+      }
+      outNode.connect(master);
+      src.connect(highpass);
+      highpass.connect(lowpass);
+      src.start();
+      return { filter: lowpass, baseFreq: cfg.lp };
+    });
+
+    ambient = { master, ctx, layers };
+    layers.forEach(driftLayer);
+
+    // the missing piece: fade in to a genuinely subtle resting presence.
+    // Without this the bed sits at near-zero gain until the first later
+    // swell, meaning it's effectively silent through most of the reel.
+    master.gain.linearRampToValueAtTime(0.011, ctx.currentTime + 1.8);
   }catch(e){}
 }
+
+// Slow, irregular, non-repeating filter wander — never the same interval
+// twice, so it never settles into a perceivable rhythm or pulse.
+function driftLayer(layer){
+  if (!ambient) return;
+  const ctx = ambient.ctx;
+  const nextFreq = layer.baseFreq + rand(-550, 550);
+  const nextTime = rand(4, 8);
+  layer.filter.frequency.cancelScheduledValues(ctx.currentTime);
+  layer.filter.frequency.setValueAtTime(layer.filter.frequency.value, ctx.currentTime);
+  layer.filter.frequency.linearRampToValueAtTime(nextFreq, ctx.currentTime + nextTime);
+  setTimeout(() => driftLayer(layer), nextTime * 1000);
+}
+
 function rampAmbient(target, dur){
   if (!ambient) return;
-  const { g, ctx } = ambient;
-  g.gain.cancelScheduledValues(ctx.currentTime);
-  g.gain.setValueAtTime(g.gain.value, ctx.currentTime);
-  g.gain.linearRampToValueAtTime(target, ctx.currentTime + dur);
+  const { master, ctx } = ambient;
+  master.gain.cancelScheduledValues(ctx.currentTime);
+  master.gain.setValueAtTime(master.gain.value, ctx.currentTime);
+  master.gain.linearRampToValueAtTime(target, ctx.currentTime + dur);
 }
 
 /* ---------------------------------------------------------------
@@ -420,7 +542,7 @@ async function tapSend(){
 /* ---------------------------------------------------------------
    CARDS
 --------------------------------------------------------------- */
-function addCard(text, { link = false } = {}){
+function addCard(text, { link = false, time = '' } = {}){
   const container = document.getElementById('messages');
   const existing = Array.from(container.querySelectorAll('.card'));
   const before = existing.map(el => el.getBoundingClientRect().top);
@@ -434,9 +556,13 @@ function addCard(text, { link = false } = {}){
 
   const statusRow = document.createElement('div');
   statusRow.className = 'cardStatus';
+  const statusLeft = document.createElement('div');
+  statusLeft.className = 'statusLeft';
   const dot = document.createElement('span'); dot.className = 'statusDot sending';
   const label = document.createElement('span'); label.className = 'statusLabel';
-  statusRow.appendChild(dot); statusRow.appendChild(label);
+  statusLeft.appendChild(dot); statusLeft.appendChild(label);
+  const timeEl = document.createElement('span'); timeEl.className = 'cardTime'; timeEl.textContent = time;
+  statusRow.appendChild(statusLeft); statusRow.appendChild(timeEl);
 
   card.appendChild(txt);
   card.appendChild(statusRow);
@@ -534,19 +660,26 @@ function prepareHookZoom(){
 async function runHookAndFirstMessage(){
   const inputText = document.getElementById('inputText');
   const world = document.getElementById('appWorld');
+  const composerSurface = document.getElementById('composerSurface');
 
-  await wait(1000); // a full second of nothing but the caret — let the curiosity sit
+  // ACT ONE — total stillness. Only the red caret exists. No sound,
+  // no motion, nothing else on screen. The audience doesn't yet know
+  // what they're looking at.
+  await wait(1750); // exactly three blink cycles at the caret's new pace — however long that takes
 
+  // ACT TWO — the transition. Sound begins, the camera starts its real
+  // translate+scale travel, and the glass composer surface condenses
+  // into being around the caret — one confident continuous gesture,
+  // not a sequence of separate stops. The message begins forming as
+  // the surface finishes arriving.
   startAmbient();
   findingHandle = startFindingLoop();
+  materializeTone();
 
-  // One continuous camera move: the caret travels from center-frame down to
-  // its true resting position while the whole interface simultaneously
-  // shrinks into place around it. This is real translate + scale together —
-  // not a zoom pinned to one static point, which is what reads as a slide
-  // transition instead of camera motion.
-  const pullBack = gsapTo(world, { x: 0, y: 0, scale: 1, duration: 1.75, ease: 'sine.inOut' });
+  const pullBack = gsapTo(world, { x: 0, y: 0, scale: 1, duration: 1.95, ease: 'sine.inOut' });
+  gsapTo(composerSurface, { opacity: 1, duration: 1.05, ease: 'power2.out' });
 
+  await wait(180); // let the surface begin condensing before text appears inside it
   await typeText(inputText, 'Hey Raj,', 'default');
   await pullBack; // guarantee the full interface has settled before we hold
 
@@ -576,7 +709,7 @@ async function cursorClickSend(){
   gsap.set(cursor, { xPercent: -50, yPercent: -50, left: startX, top: startY, opacity: 0, scale: 1 });
   await gsapTo(cursor, { opacity: 1, duration: 0.18, ease: 'power2.out' });
   cursorWhisper();
-  await gsapTo(cursor, { left: targetX, top: targetY, duration: 0.3, ease: 'power2.inOut' });
+  await moveCursorAlongCurve(cursor, { x: startX, y: startY }, { x: targetX, y: targetY }, 0.42, 'sine.inOut');
   await wait(60);
 
   await gsapTo(cursor, { scale: 0.68, duration: 0.09, ease: 'power1.in' });
@@ -599,6 +732,32 @@ function spawnRipple(x, y){
   gsap.to(r, { scale: 2.6, opacity: 0, duration: 0.6, ease: 'power2.out', onComplete: () => r.remove() });
 }
 
+// A real curved hand-path: one continuous quadratic bezier instead of
+// straight segments joined at a stop, which is what reads as mechanical
+// no matter the easing on each piece.
+function moveCursorAlongCurve(cursor, start, end, duration, ease = 'power2.inOut'){
+  const dx = end.x - start.x, dy = end.y - start.y;
+  const dist = Math.hypot(dx, dy) || 1;
+  const midX = (start.x + end.x) / 2, midY = (start.y + end.y) / 2;
+  const perpX = -dy / dist, perpY = dx / dist;
+  const bow = rand(16, 30) * (Math.random() < 0.5 ? 1 : -1);
+  const cx = midX + perpX * bow, cy = midY + perpY * bow;
+
+  const proxy = { t: 0 };
+  return new Promise(resolve => {
+    gsap.to(proxy, {
+      t: 1, duration, ease,
+      onUpdate: () => {
+        const t = proxy.t, it = 1 - t;
+        const x = it * it * start.x + 2 * it * t * cx + t * t * end.x;
+        const y = it * it * start.y + 2 * it * t * cy + t * t * end.y;
+        gsap.set(cursor, { left: x, top: y });
+      },
+      onComplete: resolve
+    });
+  });
+}
+
 async function cursorSequence(deliveredCard){
   const frame = document.getElementById('frame');
   const cursor = document.getElementById('fauxCursor');
@@ -608,17 +767,13 @@ async function cursorSequence(deliveredCard){
 
   const targetX = targetRect.left + targetRect.width * 0.38 - frameRect.left;
   const targetY = targetRect.top + targetRect.height * 0.5 - frameRect.top;
-  const startX = targetX + rand(45, 75);
-  const startY = targetY + rand(95, 135);
-  const midX = targetX + rand(-18, 18);
-  const midY = targetY + rand(42, 62);
+  const startX = targetX + rand(55, 90);
+  const startY = targetY + rand(100, 145);
 
   gsap.set(cursor, { xPercent: -50, yPercent: -50, left: startX, top: startY, opacity: 0, scale: 1 });
   await gsapTo(cursor, { opacity: 1, duration: 0.2, ease: 'power2.out' });
   cursorWhisper();
-  await gsapTo(cursor, { left: midX, top: midY, duration: 0.32, ease: 'power2.inOut' });
-  await wait(rand(60, 100)); // a small human correction, not a straight machine path
-  await gsapTo(cursor, { left: targetX, top: targetY, duration: 0.3, ease: 'power3.out' });
+  await moveCursorAlongCurve(cursor, { x: startX, y: startY }, { x: targetX, y: targetY }, 0.78, 'sine.inOut');
 
   deliveredCard.classList.add('hoverGlow');
   hoverTone();
@@ -672,7 +827,7 @@ async function signatureTransition(deliveredCard){
 
   // one gentle continuous ambient push for the whole scene — the camera
   // is never fully still, but nothing here depends on it for staging
-  const cameraPush = gsapTo('#cameraRig', { scale: 1.5, duration: 4.2, ease: 'sine.inOut' });
+  const cameraPush = gsapTo('#cameraRig', { scale: 1.5, duration: 4.6, ease: 'power2.inOut' });
 
   await gsapTo('#loadBar2', { scaleX: 1, duration: 0.6, ease: 'power1.inOut' });
   loadTick();
@@ -702,6 +857,8 @@ async function signatureTransition(deliveredCard){
   await wait(250);
   gsap.to('#heroGlow', { opacity: 1, duration: 0.8, ease: 'power2.out' });
   await gsapTo('#heroTitleGroup', { opacity: 1, duration: 0.7, ease: 'power2.out' });
+  await wait(300);
+  await gsapTo('#heroFootnote', { opacity: 1, duration: 0.6, ease: 'power2.out' });
 
   await cameraPush;
   rampAmbient(0.0001, 1.0);
@@ -718,7 +875,7 @@ async function runSequence(){
 
   /* ---- attempt one resolves ---- */
   await cursorClickSend();
-  const c1 = addCard('Hey Raj,');
+  const c1 = addCard('Hey Raj,', { time: '10:42 PM' });
   setCardStatus(c1, 'Sending…', 'sending');
   await wait(SENDING_HOLD);
   setCardStatus(c1, 'Not delivered', 'failed');
@@ -729,7 +886,7 @@ async function runSequence(){
   await typeText(inputText, 'Can I get 30 seconds of your time?', 'default');
   await pauseShort();
   await tapSend();
-  const c2 = addCard('Can I get 30 seconds of your time?');
+  const c2 = addCard('Can I get 30 seconds of your time?', { time: '10:42 PM' });
   setCardStatus(c2, 'Sending…', 'sending');
   await wait(SENDING_HOLD);
   setCardStatus(c2, 'Not delivered', 'failed');
@@ -751,7 +908,7 @@ async function runSequence(){
   await typeText(inputText, 'findingrajshamani.github.io', 'confident');
   await pauseConfident();
   await tapSend();
-  const c3 = addCard('findingrajshamani.github.io', { link: true });
+  const c3 = addCard('findingrajshamani.github.io', { link: true, time: '10:45 PM' });
   setCardStatus(c3, 'Sending…', 'sending');
   rampAmbient(0.0006, 0.5); // almost empty — makes the click land harder
   await wait(SENDING_HOLD + 100);
